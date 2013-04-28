@@ -12,7 +12,6 @@ __all__ = [
 
 from cStringIO import StringIO
 import linecache
-import string
 import types
 
 from twisted.python.filepath import FilePath
@@ -200,9 +199,9 @@ htmlReprTypes = {types.DictType: htmlDict,
 
 
 def htmlIndent(snippetLine):
-    ret = string.replace(string.replace(html.escape(string.rstrip(snippetLine)),
-                                  '  ', '&nbsp;'),
-                   '\t', '&nbsp; &nbsp; &nbsp; &nbsp; ')
+    ret = html.escape(snippetLine.rstrip())\
+            .replace('  ', '&nbsp;')\
+            .replace('\t', '&nbsp; &nbsp; &nbsp; &nbsp; ')
     return ret
 
 

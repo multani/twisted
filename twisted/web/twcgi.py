@@ -8,7 +8,6 @@ I hold resource classes and helper classes that deal with CGI scripts.
 """
 
 # System Imports
-import string
 import os
 import urllib
 
@@ -68,8 +67,8 @@ class CGIScript(resource.Resource):
         @type request: L{twisted.web.http.Request}
         @param request: An HTTP request.
         """
-        script_name = "/"+string.join(request.prepath, '/')
-        serverName = string.split(request.getRequestHostname(), ':')[0]
+        script_name = "/" + "/".join(request.prepath)
+        serverName = request.getRequestHostname().split(':')[0]
         env = {"SERVER_SOFTWARE":   server.version,
                "SERVER_NAME":       serverName,
                "GATEWAY_INTERFACE": "CGI/1.1",
@@ -89,7 +88,7 @@ class CGIScript(resource.Resource):
             env['REMOTE_ADDR'] = ip
         pp = request.postpath
         if pp:
-            env["PATH_INFO"] = "/"+string.join(pp, '/')
+            env["PATH_INFO"] = "/" + "/".join(pp)
 
         if hasattr(request, "content"):
             # request.content is either a StringIO or a TemporaryFile, and
@@ -99,7 +98,7 @@ class CGIScript(resource.Resource):
             request.content.seek(0,0)
             env['CONTENT_LENGTH'] = str(length)
 
-        qindex = string.find(request.uri, '?')
+        qindex = request.uri.find('?')
         if qindex != -1:
             qs = env['QUERY_STRING'] = request.uri[qindex+1:]
             if '=' in qs:
@@ -112,7 +111,7 @@ class CGIScript(resource.Resource):
 
         # Propogate HTTP headers
         for title, header in request.getAllHeaders().items():
-            envname = string.upper(string.replace(title, '-', '_'))
+            envname = title.replace('-', '_').upper()
             if title not in ('content-type', 'content-length'):
                 envname = "HTTP_" + envname
             env[envname] = header
