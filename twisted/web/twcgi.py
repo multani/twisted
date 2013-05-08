@@ -50,11 +50,14 @@ class CGIScript(resource.Resource):
     IPC with an external process with an unpleasant protocol.
     """
     isLeaf = 1
-    def __init__(self, filename, registry=None):
+    def __init__(self, filename, registry=None, _reactor=None):
         """
         Initialize, with the name of a CGI script file.
         """
         self.filename = filename
+        if _reactor is None:
+            _reactor = reactor
+        self._reactor = _reactor
 
 
     def render(self, request):
@@ -142,8 +145,8 @@ class CGIScript(resource.Resource):
             will get spawned.
         """
         p = CGIProcessProtocol(request)
-        reactor.spawnProcess(p, self.filename, [self.filename] + qargs, env,
-                             os.path.dirname(self.filename))
+        self._reactor.spawnProcess(p, self.filename, [self.filename] + qargs,
+                                   env, os.path.dirname(self.filename))
 
 
 
