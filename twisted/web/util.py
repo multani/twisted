@@ -14,7 +14,6 @@ from cStringIO import StringIO
 import linecache
 import types
 
-from twisted.python.filepath import FilePath
 from twisted.python.reflect import fullyQualifiedName
 from twisted.python.deprecate import deprecatedModuleAttribute
 from twisted.python.versions import Version
