@@ -13,7 +13,7 @@ from twisted.web.error import FlattenerError
 from twisted.web.util import (
     redirectTo, _SourceLineElement,
     _SourceFragmentElement, _FrameElement, _StackElement,
-    FailureElement, formatFailure, DeferredResource)
+    FailureElement, formatFailure, DeferredResource, htmlIndent)
 
 from twisted.web.http import FOUND
 from twisted.web.server import Request
@@ -422,3 +422,44 @@ class DeferredResourceTests(TestCase):
         deferredResource = DeferredResource(defer.succeed(result))
         deferredResource.render(request)
         self.assertEqual(rendered, [result])
+
+class HtmlIndentTests(TestCase):
+    """
+    Tests for L{htmlIndent}
+    """
+
+    def test_simple_input(self):
+        """
+        L{htmlIndent} transparently process input with no special cases inside.
+        """
+        line = "foo bar"
+        self.assertEqual(line, htmlIndent(line))
+
+    def test_escape_html(self):
+        """
+        L{htmlIndent} escapes HTML from its input.
+        """
+        line = "<br />"
+        self.assertEqual("&lt;br /&gt;", htmlIndent(line))
+
+    def test_strip_trailing_whitespace(self):
+        """
+        L{htmlIndent} removes trailing whitespaces from its input.
+        """
+        line = " foo bar  "
+        self.assertEqual(" foo bar", htmlIndent(line))
+
+    def test_force_spacing_from_space_characters(self):
+        """
+        If L{htmlIndent} detects consecutive space characters, it forces the
+        rendering by substituting unbreakable space.
+        """
+        line = "  foo  bar"
+        self.assertEqual("&nbsp;foo&nbsp;bar", htmlIndent(line))
+
+    def test_indent_from_tab_characters(self):
+        """
+        L{htmlIndent} replaces tab characters by unbreakable spaces.
+        """
+        line = "\tfoo"
+        self.assertEqual("&nbsp; &nbsp; &nbsp; &nbsp; foo", htmlIndent(line))
