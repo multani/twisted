@@ -241,11 +241,14 @@ class DummyRequest(object):
             return self.client.host
         return None
 
+
     def getRequestHostname(self):
         return self._serverName
 
+
     def getHost(self):
         return DummyChannel.TCP()
+
 
     def getClient(self):
         pass
