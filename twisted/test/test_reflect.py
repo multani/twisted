@@ -16,6 +16,7 @@ try:
 except ImportError:
     ModuleImporter = None
 
+from twisted.python.compat import _PY3
 from twisted.trial import unittest
 from twisted.python import reflect
 from twisted.python.versions import Version
@@ -820,11 +821,16 @@ class ObjectGrep(unittest.TestCase):
 
 
 class GetClass(unittest.TestCase):
+    if _PY3:
+        oldClassNames = ['type']
+    else:
+        oldClassNames = ['class', 'classobj']
+
     def testOld(self):
         class OldClass:
             pass
         old = OldClass()
-        self.assertIn(reflect.getClass(OldClass).__name__, ('class', 'classobj'))
+        self.assertIn(reflect.getClass(OldClass).__name__, self.oldClassNames)
         self.assertEqual(reflect.getClass(old).__name__, 'OldClass')
 
     def testNew(self):
