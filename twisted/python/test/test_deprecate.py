@@ -20,9 +20,9 @@ from twisted.python.deprecate import _getDeprecationWarningString
 from twisted.python.deprecate import DEPRECATION_WARNING_FORMAT
 from twisted.python.deprecate import (
     getDeprecationWarningString,
-    deprecated, _appendToDocstring, _getDeprecationDocstring,
-    _fullyQualifiedName as fullyQualifiedName)
+    deprecated, _appendToDocstring, _getDeprecationDocstring)
 
+from twisted.python.reflect import fullyQualifiedName
 from twisted.python.versions import Version
 from twisted.python.filepath import FilePath
 

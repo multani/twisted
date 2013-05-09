@@ -9,6 +9,7 @@ with Python's reflection capabilities.
 
 from __future__ import division, absolute_import
 
+import inspect
 import os
 import sys
 import types
@@ -25,10 +26,40 @@ RegexType = type(re.compile(""))
 from twisted.python.compat import _PY3
 from twisted.python.deprecate import deprecated
 from twisted.python import compat
-from twisted.python.deprecate import _fullyQualifiedName as fullyQualifiedName
 from twisted.python.versions import Version
 
 from twisted.python.compat import reraise, nativeString, NativeStringIO
+
+# Notionally, part of twisted.python.reflect, but defining it there causes a
+# cyclic dependency between this module and that module.  Define it here,
+# instead, and let reflect import it to re-expose to the public.
+def fullyQualifiedName(obj):
+    """
+    Return the fully qualified name of a module, class, method or function.
+    Classes and functions need to be module level ones to be correctly
+    qualified.
+
+    @rtype: C{str}.
+    """
+    try:
+        name = obj.__qualname__
+    except AttributeError:
+        name = obj.__name__
+
+    if inspect.isclass(obj) or inspect.isfunction(obj):
+        moduleName = obj.__module__
+        return "%s.%s" % (moduleName, name)
+    elif inspect.ismethod(obj):
+        try:
+            cls = obj.im_class
+        except AttributeError:
+            # Python 3 eliminates im_class, substitutes __module__ and
+            # __qualname__ to provide similar information.
+            return "%s.%s" % (obj.__module__, obj.__qualname__)
+        else:
+            className = fullyQualifiedName(cls)
+            return "%s.%s" % (className, name)
+    return name
 
 
 def prefixedMethodNames(classObj, prefix):

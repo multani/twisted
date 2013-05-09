@@ -21,11 +21,7 @@ from twisted.python import reflect
 from twisted.python.versions import Version
 from twisted.python.reflect import (
     accumulateMethods, prefixedMethods, prefixedMethodNames,
-    addMethodNamesToDict)
-# After twisted.python.reflect is fully ported to Python 3, import
-# fullyQualifiedName from there instead, to test the actual public interface
-# instead of this implementation detail.  See #5929.
-from twisted.python.deprecate import _fullyQualifiedName as fullyQualifiedName
+    addMethodNamesToDict, fullyQualifiedName)
 
 
 
