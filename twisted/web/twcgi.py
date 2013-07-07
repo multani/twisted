@@ -13,7 +13,7 @@ import urllib
 
 # Twisted Imports
 from twisted.web import http
-from twisted.internet import reactor, protocol
+from twisted.internet import protocol
 from twisted.spread import pb
 from twisted.python import log, filepath
 from twisted.web import resource, server, static
@@ -56,6 +56,10 @@ class CGIScript(resource.Resource):
         """
         self.filename = filename
         if _reactor is None:
+            # This installs a default reactor, if None was installed before.
+            # We do a late import here, so that importing the current module
+            # won't directly trigger installing a default reactor.
+            from twisted.internet import reactor
             _reactor = reactor
         self._reactor = _reactor
 
