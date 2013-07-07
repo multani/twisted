@@ -87,7 +87,7 @@ class CGI(unittest.TestCase):
         return self.p.getHost().port
 
     def tearDown(self):
-        if self.p:
+        if getattr(self, 'p', None):
             return self.p.stopListening()
 
 
@@ -212,6 +212,23 @@ class CGI(unittest.TestCase):
     testReadAllInput.timeout = 5
     def _testReadAllInput_1(self, res):
         self.assertEqual(res, "readallinput ok%s" % os.linesep)
+
+    def test_useReactorArgument(self):
+        """
+        L{twcgi.FilteredScript.runProcess} uses the reactor passed as an
+        argument to the constructor.
+        """
+        class FakeReactor:
+            called = False
+            def spawnProcess(self, *args, **kwargs):
+                self.called = True
+
+        _fake_reactor = FakeReactor()
+        request = DummyRequest(['a', 'b'])
+        resource = twcgi.FilteredScript("dummy-file", reactor=_fake_reactor)
+        _render(resource, request)
+
+        self.assertTrue(_fake_reactor.called)
 
 
 class CGIScriptTests(unittest.TestCase):

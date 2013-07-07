@@ -190,9 +190,9 @@ class FilteredScript(CGIScript):
             will get spawned.
         """
         p = CGIProcessProtocol(request)
-        reactor.spawnProcess(p, self.filter,
-                             [self.filter, self.filename] + qargs, env,
-                             os.path.dirname(self.filename))
+        self._reactor.spawnProcess(p, self.filter,
+                                   [self.filter, self.filename] + qargs, env,
+                                   os.path.dirname(self.filename))
 
 
 
