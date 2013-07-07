@@ -230,7 +230,7 @@ class CGIScriptTests(unittest.TestCase):
                 self.process_env = env
 
         _reactor = FakeReactor()
-        resource = twcgi.CGIScript(self.mktemp(), _reactor=_reactor)
+        resource = twcgi.CGIScript(self.mktemp(), reactor=_reactor)
         request = DummyRequest(['a', 'b'])
         _render(resource, request)
 

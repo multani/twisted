@@ -50,18 +50,17 @@ class CGIScript(resource.Resource):
     IPC with an external process with an unpleasant protocol.
     """
     isLeaf = 1
-    def __init__(self, filename, registry=None, _reactor=None):
+    def __init__(self, filename, registry=None, reactor=None):
         """
         Initialize, with the name of a CGI script file.
         """
         self.filename = filename
-        if _reactor is None:
+        if reactor is None:
             # This installs a default reactor, if None was installed before.
             # We do a late import here, so that importing the current module
             # won't directly trigger installing a default reactor.
             from twisted.internet import reactor
-            _reactor = reactor
-        self._reactor = _reactor
+        self._reactor = reactor
 
 
     def render(self, request):
