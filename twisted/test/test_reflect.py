@@ -114,9 +114,9 @@ class ObjectGrep(unittest.TestCase):
         o = Dummy()
         m = o.dummy
 
-        self.assertIn(".im_self", reflect.objgrep(m, m.im_self, reflect.isSame))
-        self.assertIn(".im_class", reflect.objgrep(m, m.im_class, reflect.isSame))
-        self.assertIn(".im_func", reflect.objgrep(m, m.im_func, reflect.isSame))
+        self.assertIn(".__self__", reflect.objgrep(m, m.__self__, reflect.isSame))
+        self.assertIn(".__self__.__class__", reflect.objgrep(m, m.__self__.__class__, reflect.isSame))
+        self.assertIn(".__func__", reflect.objgrep(m, m.__func__, reflect.isSame))
 
     def test_everything(self):
         """
@@ -136,7 +136,7 @@ class ObjectGrep(unittest.TestCase):
         m = i.method
         w = weakref.ref(m)
 
-        self.assertIn("().im_self.attr[2][0][2]{'Foosh'}", reflect.objgrep(w, o, reflect.isSame))
+        self.assertIn("().__self__.attr[2][0][2]{'Foosh'}", reflect.objgrep(w, o, reflect.isSame))
 
     def test_depthLimit(self):
         """
