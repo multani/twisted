@@ -292,7 +292,7 @@ __all__ = [
 
     'funcinfo', 'fullFuncName', 'qual', 'getcurrent', 'getClass', 'isinst',
     'namedModule', 'namedObject', 'namedClass', 'namedAny',
-    'safe_repr', 'safe_str', 'allYourBase', 'accumulateBases',
+    'safe_repr', 'safe_str',
     'prefixedMethodNames', 'addMethodNamesToDict', 'prefixedMethods',
     'accumulateMethods',
     'accumulateClassDict', 'accumulateClassList', 'isSame', 'isLike',
