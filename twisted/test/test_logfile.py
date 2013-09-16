@@ -24,9 +24,9 @@ class LogFileTestCase(unittest.TestCase):
         Restore back write rights on created paths: if tests modified the
         rights, that will allow the paths to be removed easily afterwards.
         """
-        os.chmod(self.dir, 0777)
+        os.chmod(self.dir, 0o777)
         if os.path.exists(self.path):
-            os.chmod(self.path, 0777)
+            os.chmod(self.path, 0o777)
 
 
     def testWriting(self):
@@ -124,7 +124,7 @@ class LogFileTestCase(unittest.TestCase):
         Check rotated files have same permissions as original.
         """
         f = open(self.path, "w").close()
-        os.chmod(self.path, 0707)
+        os.chmod(self.path, 0o707)
         mode = os.stat(self.path)[stat.ST_MODE]
         log = logfile.LogFile(self.name, self.dir)
         log.write("abc")
@@ -140,7 +140,7 @@ class LogFileTestCase(unittest.TestCase):
         log.write("abc")
 
         # change permissions so rotation would fail
-        os.chmod(self.dir, 0555)
+        os.chmod(self.dir, 0o555)
 
         # if this succeeds, chmod doesn't restrict us, so we can't
         # do the test
@@ -180,18 +180,18 @@ class LogFileTestCase(unittest.TestCase):
 
         log.write("4" * 11)
         self.failUnless(os.path.exists("%s.3" % self.path))
-        self.assertEqual(file("%s.3" % self.path).read(), "1" * 11)
+        self.assertEqual(open("%s.3" % self.path).read(), "1" * 11)
 
         log.write("5" * 11)
-        self.assertEqual(file("%s.3" % self.path).read(), "2" * 11)
+        self.assertEqual(open("%s.3" % self.path).read(), "2" * 11)
         self.failUnless(not os.path.exists("%s.4" % self.path))
 
     def test_fromFullPath(self):
         """
         Test the fromFullPath method.
         """
-        log1 = logfile.LogFile(self.name, self.dir, 10, defaultMode=0777)
-        log2 = logfile.LogFile.fromFullPath(self.path, 10, defaultMode=0777)
+        log1 = logfile.LogFile(self.name, self.dir, 10, defaultMode=0o777)
+        log2 = logfile.LogFile.fromFullPath(self.path, 10, defaultMode=0o777)
         self.assertEqual(log1.name, log2.name)
         self.assertEqual(os.path.abspath(log1.path), log2.path)
         self.assertEqual(log1.rotateLength, log2.rotateLength)
@@ -202,8 +202,8 @@ class LogFileTestCase(unittest.TestCase):
         Test the default permission of the log file: if the file exist, it
         should keep the permission.
         """
-        f = file(self.path, "w")
-        os.chmod(self.path, 0707)
+        f = open(self.path, "w")
+        os.chmod(self.path, 0o707)
         currentMode = stat.S_IMODE(os.stat(self.path)[stat.ST_MODE])
         f.close()
         log1 = logfile.LogFile(self.name, self.dir)
@@ -215,13 +215,13 @@ class LogFileTestCase(unittest.TestCase):
         """
         Test specifying the permissions used on the log file.
         """
-        log1 = logfile.LogFile(self.name, self.dir, defaultMode=0066)
+        log1 = logfile.LogFile(self.name, self.dir, defaultMode=0o066)
         mode = stat.S_IMODE(os.stat(self.path)[stat.ST_MODE])
         if runtime.platform.isWindows():
             # The only thing we can get here is global read-only
-            self.assertEqual(mode, 0444)
+            self.assertEqual(mode, 0o444)
         else:
-            self.assertEqual(mode, 0066)
+            self.assertEqual(mode, 0o066)
 
 
     def test_reopen(self):
