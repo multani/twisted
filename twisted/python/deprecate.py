@@ -61,10 +61,45 @@ from dis import findlinestarts
 from functools import wraps
 
 from twisted.python.versions import getVersionString
-from twisted.python.reflect import fullyQualifiedName
-
 
 DEPRECATION_WARNING_FORMAT = '%(fqpn)s was deprecated in %(version)s'
+
+# Notionally, part of twisted.python.reflect, but defining it there causes a
+# cyclic dependency between this module and that module.  Define it here,
+# instead, and let reflect import it to re-expose to the public.
+# If twisted.python.reflect doesn't need the deprecation functions anymore,
+# this function might be moved back to its original place in reflect.
+def _fullyQualifiedName(obj):
+    """
+    Return the fully qualified name of a module, class, method or function.
+    Classes and functions need to be module level ones to be correctly
+    qualified.
+
+    @rtype: C{str}.
+    """
+    try:
+        name = obj.__qualname__
+    except AttributeError:
+        name = obj.__name__
+
+    if inspect.isclass(obj) or inspect.isfunction(obj):
+        moduleName = obj.__module__
+        return "%s.%s" % (moduleName, name)
+    elif inspect.ismethod(obj):
+        try:
+            cls = obj.im_class
+        except AttributeError:
+            # Python 3 eliminates im_class, substitutes __module__ and
+            # __qualname__ to provide similar information.
+            return "%s.%s" % (obj.__module__, obj.__qualname__)
+        else:
+            className = _fullyQualifiedName(cls)
+            return "%s.%s" % (className, name)
+    return name
+# Try to keep it looking like something in twisted.python.reflect.
+_fullyQualifiedName.__module__ = 'twisted.python.reflect'
+_fullyQualifiedName.__name__ = 'fullyQualifiedName'
+_fullyQualifiedName.__qualname__ = 'fullyQualifiedName'
 
 
 def _getReplacementString(replacement):
@@ -78,7 +113,7 @@ def _getReplacementString(replacement):
         instead".
     """
     if callable(replacement):
-        replacement = fullyQualifiedName(replacement)
+        replacement = _fullyQualifiedName(replacement)
     return "please use %s instead" % (replacement,)
 
 
@@ -173,7 +208,7 @@ def getDeprecationWarningString(callableThing, version, format=None,
     @rtype: C{str}
     """
     return _getDeprecationWarningString(
-        fullyQualifiedName(callableThing), version, format, replacement)
+        _fullyQualifiedName(callableThing), version, format, replacement)
 
 
 
