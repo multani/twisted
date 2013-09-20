@@ -440,4 +440,7 @@ __all__ = [
     "iterbytes",
     "intToBytes",
     "lazyByteSlice",
+    "StringType",
+    "InstanceType",
+    "FileType",
     ]
