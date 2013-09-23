@@ -294,6 +294,17 @@ class LogFileTestCase(unittest.TestCase):
         copy.close()
 
 
+    def test_cantChangeFileMode(self):
+        """
+        Opening a L{LogFile} which can be read and write but whose mode can't
+        be changed doesn't trigger an error.
+        """
+        log = logfile.LogFile("null", "/dev", defaultMode=0o555)
+
+        self.assertEqual(log.path, "/dev/null")
+        self.assertEqual(log.defaultMode, 0o555)
+
+        log.close()
 
 
 class RiggedDailyLogFile(logfile.DailyLogFile):
