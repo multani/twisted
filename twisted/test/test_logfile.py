@@ -1,7 +1,7 @@
 # Copyright (c) Twisted Matrix Laboratories.
 # See LICENSE for details.
 
-import os, time, stat, errno
+import os, time, stat, errno, pickle
 
 from twisted.trial import unittest
 from twisted.python import logfile, runtime
@@ -264,6 +264,35 @@ class LogFileTestCase(unittest.TestCase):
         e = self.assertRaises(
             IOError, logfile.LogFile, self.name, 'this_dir_does_not_exist')
         self.assertEqual(e.errno, errno.ENOENT)
+
+
+    def test_persistence(self):
+        """
+        L{LogFile} objects can be pickled and unpickled, which preserves al the
+        various attributes of the log file.
+        """
+        rotateLength = 12345
+        defaultMode = 0o642
+        maxRotatedFiles = 42
+
+        log = logfile.LogFile(self.name, self.dir,
+                              rotateLength, defaultMode,
+                              maxRotatedFiles)
+        log.write("123")
+        log.close()
+
+        # check that unpickled threadpool has same number of threads
+        copy = pickle.loads(pickle.dumps(log))
+
+        self.assertEqual(self.name, copy.name)
+        self.assertEqual(self.dir, copy.directory)
+        self.assertEqual(self.path, copy.path)
+        self.assertEqual(rotateLength, copy.rotateLength)
+        self.assertEqual(defaultMode, copy.defaultMode)
+        self.assertEqual(maxRotatedFiles, copy.maxRotatedFiles)
+        self.assertEqual(log.size, copy.size)
+        copy.close()
+
 
 
 
