@@ -118,6 +118,7 @@ class LogFileTestCase(unittest.TestCase):
         self.assertEqual(reader.readLines(), ["abc\n", "def\n"])
         self.assertEqual(reader.readLines(), [])
         reader.close()
+        log.close()
 
     def testModePreservation(self):
         """
@@ -130,6 +131,7 @@ class LogFileTestCase(unittest.TestCase):
         log.write("abc")
         log.rotate()
         self.assertEqual(mode, os.stat(self.path)[stat.ST_MODE])
+        log.close()
 
 
     def test_noPermission(self):
@@ -180,11 +182,14 @@ class LogFileTestCase(unittest.TestCase):
 
         log.write("4" * 11)
         self.failUnless(os.path.exists("%s.3" % self.path))
-        self.assertEqual(open("%s.3" % self.path).read(), "1" * 11)
+        with open("%s.3" % self.path) as fp:
+            self.assertEqual(fp.read(), "1" * 11)
 
         log.write("5" * 11)
-        self.assertEqual(open("%s.3" % self.path).read(), "2" * 11)
+        with open("%s.3" % self.path) as fp:
+            self.assertEqual(fp.read(), "2" * 11)
         self.failUnless(not os.path.exists("%s.4" % self.path))
+        log.close()
 
     def test_fromFullPath(self):
         """
@@ -196,6 +201,8 @@ class LogFileTestCase(unittest.TestCase):
         self.assertEqual(os.path.abspath(log1.path), log2.path)
         self.assertEqual(log1.rotateLength, log2.rotateLength)
         self.assertEqual(log1.defaultMode, log2.defaultMode)
+        log1.close()
+        log2.close()
 
     def test_defaultPermissions(self):
         """
@@ -209,6 +216,7 @@ class LogFileTestCase(unittest.TestCase):
         log1 = logfile.LogFile(self.name, self.dir)
         self.assertEqual(stat.S_IMODE(os.stat(self.path)[stat.ST_MODE]),
                           currentMode)
+        log1.close()
 
 
     def test_specifiedPermissions(self):
@@ -222,6 +230,7 @@ class LogFileTestCase(unittest.TestCase):
             self.assertEqual(mode, 0o444)
         else:
             self.assertEqual(mode, 0o066)
+        log1.close()
 
 
     def test_reopen(self):
@@ -317,4 +326,5 @@ class DailyLogFileTestCase(unittest.TestCase):
         log._clock = 259199 # 1970/01/03 23:59.59
         log.write("3")
         self.assert_(not os.path.exists(days[2]))
+        log.close()
 
