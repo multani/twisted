@@ -29,6 +29,16 @@ class LogFileTestCase(unittest.TestCase):
             os.chmod(self.path, 0o777)
 
 
+    def test_abstractShouldRotate(self):
+        """
+        L{BaseLogFile.shouldRotate} is abstract and must be implemented by
+        subclass.
+        """
+        log = logfile.BaseLogFile(self.name, self.dir)
+        self.assertRaises(NotImplementedError, log.shouldRotate)
+        log.close()
+
+
     def testWriting(self):
         log = logfile.LogFile(self.name, self.dir)
         log.write("123")
