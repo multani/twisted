@@ -378,3 +378,26 @@ class DailyLogFileTestCase(unittest.TestCase):
         self.assert_(not os.path.exists(days[2]))
         log.close()
 
+    def test_getLog(self):
+        log = RiggedDailyLogFile(self.name, self.dir)
+        log.write("1\n")
+        log.write("2\n")
+        log.write("3\n")
+
+        r = log.getLog(0.0)
+        self.assertEqual(["1\n", "2\n", "3\n"], r.readLines())
+
+        self.assertRaises(ValueError, log.getLog, 86400)
+
+        log._clock = 86401 # New day
+        log.rotate()
+        r = log.getLog(0) # We get the previous log
+        self.assertEqual(["1\n", "2\n", "3\n"], r.readLines())
+
+    def test_toDate(self):
+        log = logfile.DailyLogFile(self.name, self.dir)
+
+        timestamp = time.mktime((2000, 1, 1, 0, 0, 0, 0, 0, 0))
+        self.assertEqual((2000, 1, 1), log.toDate(timestamp))
+
+        # TODO: should test that toDate() returns today's date
