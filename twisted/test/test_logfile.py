@@ -37,7 +37,6 @@ class LogFileTestCase(unittest.TestCase):
         """
         log = logfile.BaseLogFile(self.name, self.dir)
         self.assertRaises(NotImplementedError, log.shouldRotate)
-        log.close()
 
 
     def testWriting(self):
@@ -129,7 +128,6 @@ class LogFileTestCase(unittest.TestCase):
         self.assertEqual(reader.readLines(), ["abc\n", "def\n"])
         self.assertEqual(reader.readLines(), [])
         reader.close()
-        log.close()
 
     def testModePreservation(self):
         """
@@ -142,7 +140,6 @@ class LogFileTestCase(unittest.TestCase):
         log.write("abc")
         log.rotate()
         self.assertEqual(mode, os.stat(self.path)[stat.ST_MODE])
-        log.close()
 
 
     def test_noPermission(self):
@@ -200,7 +197,6 @@ class LogFileTestCase(unittest.TestCase):
         with open("%s.3" % self.path) as fp:
             self.assertEqual(fp.read(), "2" * 11)
         self.failUnless(not os.path.exists("%s.4" % self.path))
-        log.close()
 
     def test_fromFullPath(self):
         """
@@ -212,8 +208,6 @@ class LogFileTestCase(unittest.TestCase):
         self.assertEqual(os.path.abspath(log1.path), log2.path)
         self.assertEqual(log1.rotateLength, log2.rotateLength)
         self.assertEqual(log1.defaultMode, log2.defaultMode)
-        log1.close()
-        log2.close()
 
     def test_defaultPermissions(self):
         """
@@ -227,7 +221,6 @@ class LogFileTestCase(unittest.TestCase):
         log1 = logfile.LogFile(self.name, self.dir)
         self.assertEqual(stat.S_IMODE(os.stat(self.path)[stat.ST_MODE]),
                           currentMode)
-        log1.close()
 
 
     def test_specifiedPermissions(self):
@@ -241,7 +234,6 @@ class LogFileTestCase(unittest.TestCase):
             self.assertEqual(mode, 0o444)
         else:
             self.assertEqual(mode, 0o066)
-        log1.close()
 
 
     def test_reopen(self):
@@ -302,7 +294,6 @@ class LogFileTestCase(unittest.TestCase):
         self.assertEqual(defaultMode, copy.defaultMode)
         self.assertEqual(maxRotatedFiles, copy.maxRotatedFiles)
         self.assertEqual(log.size, copy.size)
-        copy.close()
 
 
     def test_cantChangeFileMode(self):
@@ -314,8 +305,6 @@ class LogFileTestCase(unittest.TestCase):
 
         self.assertEqual(log.path, "/dev/null")
         self.assertEqual(log.defaultMode, 0o555)
-
-        log.close()
 
 
     def test_listLogsWithBadlyNamedFiles(self):
@@ -331,7 +320,6 @@ class LogFileTestCase(unittest.TestCase):
             fp.write("123")
 
         self.assertEqual([1], log.listLogs())
-
 
 
 class RiggedDailyLogFile(logfile.DailyLogFile):
@@ -393,7 +381,6 @@ class DailyLogFileTestCase(unittest.TestCase):
         log._clock = 259199 # 1970/01/03 23:59.59
         log.write("3")
         self.assert_(not os.path.exists(days[2]))
-        log.close()
 
     def test_getLog(self):
         log = RiggedDailyLogFile(self.name, self.dir)
@@ -447,7 +434,6 @@ class DailyLogFileTestCase(unittest.TestCase):
         log = logfile.DailyLogFile(self.name, self.dir,
                                    defaultMode)
         log.write("123")
-        log.close()
 
         # Check that the unpickled log is the same as the original one.
         copy = pickle.loads(pickle.dumps(log))
@@ -457,4 +443,3 @@ class DailyLogFileTestCase(unittest.TestCase):
         self.assertEqual(self.path, copy.path)
         self.assertEqual(defaultMode, copy.defaultMode)
         self.assertEqual(log.lastDate, copy.lastDate)
-        copy.close()

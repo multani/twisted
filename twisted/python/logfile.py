@@ -39,6 +39,12 @@ class BaseLogFile:
             self.defaultMode = defaultMode
         self._openFile()
 
+    def __del__(self):
+        try:
+            self.close()
+        except: # File might be already closed
+            pass
+
     def fromFullPath(cls, filename, *args, **kwargs):
         """
         Construct a log file from a full file path.
@@ -305,6 +311,9 @@ class LogReader:
 
     def __init__(self, name):
         self._file = open(name, "r")
+
+    def __del__(self):
+        self.close()
 
     def readLines(self, lines=10):
         """Read a list of lines from the log file.
