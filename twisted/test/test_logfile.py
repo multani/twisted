@@ -399,6 +399,47 @@ class DailyLogFileTestCase(unittest.TestCase):
         self.assertEqual(["1\n", "2\n", "3\n"], r.readLines())
 
 
+    def test_rotateAlreadyExists(self):
+        """
+        L{DailyLogFile.rotate} doesn't do anything if they new log file already
+        exists on the disk.
+        """
+        log = RiggedDailyLogFile(self.name, self.dir)
+        # Build a new file with the same name as the file which would be created
+        # if the log file is to be rotated.
+        with open("%s.%s" % (log.path, log.suffix(log.lastDate)), "w") as fp:
+            fp.write("123")
+        previous_file = log._file
+        log.rotate()
+        self.assertEqual(previous_file, log._file)
+
+
+    def test_rotatePermissionDirectoryNotOk(self):
+        """
+        L{DailyLogFile.rotate} doesn't do anything if the directory containing
+        the log files can't be written to.
+        """
+        log = logfile.DailyLogFile(self.name, self.dir)
+        os.chmod(log.directory, 0o444)
+        # Restore permissions so tests can be cleaned up.
+        self.addCleanup(os.chmod, log.directory, 0o755)
+        previous_file = log._file
+        log.rotate()
+        self.assertEqual(previous_file, log._file)
+
+
+    def test_rotatePermissionFileNotOk(self):
+        """
+        L{DailyLogFile.rotate} doesn't do anything if the log file can't be
+        written to.
+        """
+        log = logfile.DailyLogFile(self.name, self.dir)
+        os.chmod(log.path, 0o444)
+        previous_file = log._file
+        log.rotate()
+        self.assertEqual(previous_file, log._file)
+
+
     def test_toDate(self):
         """
         Test that L{DailyLogFile.toDate} converts its timestamp argument to a
