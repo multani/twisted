@@ -383,20 +383,25 @@ class DailyLogFileTestCase(unittest.TestCase):
         self.assert_(not os.path.exists(days[2]))
 
     def test_getLog(self):
+        """
+        Test retrieving log files with L{DailyLogFile.getLog}.
+        """
+        data = ["1\n", "2\n", "3\n"]
         log = RiggedDailyLogFile(self.name, self.dir)
-        log.write("1\n")
-        log.write("2\n")
-        log.write("3\n")
+        for d in data:
+            log.write(d)
 
+        # This returns the current log file.
         r = log.getLog(0.0)
-        self.assertEqual(["1\n", "2\n", "3\n"], r.readLines())
+        self.assertEqual(data, r.readLines())
 
+        # We can't get this log, it doesn't exist yet.
         self.assertRaises(ValueError, log.getLog, 86400)
 
         log._clock = 86401 # New day
         log.rotate()
         r = log.getLog(0) # We get the previous log
-        self.assertEqual(["1\n", "2\n", "3\n"], r.readLines())
+        self.assertEqual(data, r.readLines())
 
 
     def test_rotateAlreadyExists(self):
