@@ -1,6 +1,7 @@
 # Copyright (c) Twisted Matrix Laboratories.
 # See LICENSE for details.
 
+import datetime
 import os, time, stat, errno, pickle
 
 from twisted.trial import unittest
@@ -278,7 +279,7 @@ class LogFileTestCase(unittest.TestCase):
 
     def test_persistence(self):
         """
-        L{LogFile} objects can be pickled and unpickled, which preserves al the
+        L{LogFile} objects can be pickled and unpickled, which preserves all the
         various attributes of the log file.
         """
         rotateLength = 12345
@@ -291,9 +292,9 @@ class LogFileTestCase(unittest.TestCase):
         log.write("123")
         log.close()
 
-        # check that unpickled threadpool has same number of threads
         copy = pickle.loads(pickle.dumps(log))
 
+        # Check that the unpickled log is the same as the original one.
         self.assertEqual(self.name, copy.name)
         self.assertEqual(self.dir, copy.directory)
         self.assertEqual(self.path, copy.path)
@@ -315,6 +316,22 @@ class LogFileTestCase(unittest.TestCase):
         self.assertEqual(log.defaultMode, 0o555)
 
         log.close()
+
+
+    def test_listLogsWithBadlyNamedFiles(self):
+        """
+        L{LogFile.listLogs} doesn't choke if it encounters a file with an
+        unexpected name.
+        """
+        log = logfile.LogFile(self.name, self.dir)
+
+        with open("%s.1" % log.path, "w") as fp:
+            fp.write("123")
+        with open("%s.bad-file" % log.path, "w") as fp:
+            fp.write("123")
+
+        self.assertEqual([1], log.listLogs())
+
 
 
 class RiggedDailyLogFile(logfile.DailyLogFile):
@@ -394,10 +411,50 @@ class DailyLogFileTestCase(unittest.TestCase):
         r = log.getLog(0) # We get the previous log
         self.assertEqual(["1\n", "2\n", "3\n"], r.readLines())
 
+
     def test_toDate(self):
+        """
+        Test that L{DailyLogFile.toDate} converts its timestamp argument to a
+        time tuple (year, month, day).
+        """
         log = logfile.DailyLogFile(self.name, self.dir)
 
         timestamp = time.mktime((2000, 1, 1, 0, 0, 0, 0, 0, 0))
         self.assertEqual((2000, 1, 1), log.toDate(timestamp))
 
-        # TODO: should test that toDate() returns today's date
+
+    def test_toDateDefaultToday(self):
+        """
+        Test that L{DailyLogFile.toDate} returns today's date by default.
+        """
+        log = logfile.DailyLogFile(self.name, self.dir)
+
+        # XXX: this might break if by chance, current's date changes between the
+        # two functions runs.
+        today = datetime.date.today()
+        log_date = log.toDate()
+
+        self.assertEqual(today.timetuple()[:3], log_date)
+
+
+    def test_persistence(self):
+        """
+        L{DailyLogFile} objects can be pickled and unpickled, which preserves
+        all the various attributes of the log file.
+        """
+        defaultMode = 0o642
+
+        log = logfile.DailyLogFile(self.name, self.dir,
+                                   defaultMode)
+        log.write("123")
+        log.close()
+
+        # Check that the unpickled log is the same as the original one.
+        copy = pickle.loads(pickle.dumps(log))
+
+        self.assertEqual(self.name, copy.name)
+        self.assertEqual(self.dir, copy.directory)
+        self.assertEqual(self.path, copy.path)
+        self.assertEqual(defaultMode, copy.defaultMode)
+        self.assertEqual(log.lastDate, copy.lastDate)
+        copy.close()
