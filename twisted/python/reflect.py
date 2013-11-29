@@ -7,6 +7,8 @@ Standardized versions of various cool and/or strange things that you can do
 with Python's reflection capabilities.
 """
 
+from __future__ import division, absolute_import
+
 import sys
 import types
 import pickle
