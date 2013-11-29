@@ -250,24 +250,28 @@ def objgrep(start, goal, eq=isLike, path='', paths=None, seen=None, showUnknowns
             return
         maxDepth -= 1
     seen[id(start)] = start
+    # Make an alias for those arguments which are passed recursively to objgrep
+    # for container objects.
+    args = (paths, seen, showUnknowns, maxDepth)
     if isinstance(start, dict):
         for k, v in start.items():
-            objgrep(k, goal, eq, path+'{'+repr(v)+'}', paths, seen, showUnknowns, maxDepth)
-            objgrep(v, goal, eq, path+'['+repr(k)+']', paths, seen, showUnknowns, maxDepth)
+            objgrep(k, goal, eq, path+'{'+repr(v)+'}', *args)
+            objgrep(v, goal, eq, path+'['+repr(k)+']', *args)
     elif isinstance(start, (list, tuple, deque)):
         for idx, _elem in enumerate(start):
-            objgrep(start[idx], goal, eq, path+'['+str(idx)+']', paths, seen, showUnknowns, maxDepth)
+            objgrep(start[idx], goal, eq, path+'['+str(idx)+']', *args)
     elif isinstance(start, types.MethodType):
-        objgrep(start.__self__, goal, eq, path+'.__self__', paths, seen, showUnknowns, maxDepth)
-        objgrep(start.__func__, goal, eq, path+'.__func__', paths, seen, showUnknowns, maxDepth)
-        objgrep(start.__self__.__class__, goal, eq, path+'.__self__.__class__', paths, seen, showUnknowns, maxDepth)
+        objgrep(start.__self__, goal, eq, path+'.__self__', *args)
+        objgrep(start.__func__, goal, eq, path+'.__func__', *args)
+        objgrep(start.__self__.__class__, goal, eq, path+'.__self__.__class__',
+                *args)
     elif hasattr(start, '__dict__'):
         for k, v in start.__dict__.items():
-            objgrep(v, goal, eq, path+'.'+k, paths, seen, showUnknowns, maxDepth)
+            objgrep(v, goal, eq, path+'.'+k, *args)
         if isinstance(start, compat.InstanceType):
-            objgrep(start.__class__, goal, eq, path+'.__class__', paths, seen, showUnknowns, maxDepth)
+            objgrep(start.__class__, goal, eq, path+'.__class__', *args)
     elif isinstance(start, weakref.ReferenceType):
-        objgrep(start(), goal, eq, path+'()', paths, seen, showUnknowns, maxDepth)
+        objgrep(start(), goal, eq, path+'()', *args)
     elif (isinstance(start, (compat.StringType,
                     int, types.FunctionType,
                      types.BuiltinMethodType, RegexType, float,
