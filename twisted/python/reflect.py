@@ -87,16 +87,6 @@ def fullFuncName(func):
     return qualName
 
 
-
-def getcurrent(clazz):
-    assert type(clazz) == types.ClassType, 'must be a class...'
-    module = namedModule(clazz.__module__)
-    currclass = getattr(module, clazz.__name__, None)
-    if currclass is None:
-        return clazz
-    return currclass
-
-
 def getClass(obj):
     """
     Return the class or type of object 'obj'.
@@ -107,29 +97,44 @@ def getClass(obj):
     else:
         return type(obj)
 
-# class graph nonsense
-
-# I should really have a better name for this...
-def isinst(inst,clazz):
-    if type(inst) != compat.InstanceType or type(clazz)!= types.ClassType:
-        return isinstance(inst,clazz)
-    cl = inst.__class__
-    cl2 = getcurrent(cl)
-    clazz = getcurrent(clazz)
-    if issubclass(cl2,clazz):
-        if cl == cl2:
-            return WAS
-        else:
-            inst.__class__ = cl2
-            return IS
-    else:
-        return ISNT
-
-
 
 ## the following were factored out of usage
 
 if not _PY3:
+    # The following functions aren't documented, nor tested, have much simpler
+    # builtin implementations and are not used within Twisted or "known"
+    # projects. There are to be deprecated in
+    # https://twistedmatrix.com/trac/ticket/6859
+    # Refer to this ticket, as well as
+    # https://twistedmatrix.com/trac/ticket/5929?replyto=27#comment:28 and
+    # following comments for more information.
+
+    def getcurrent(clazz):
+        assert type(clazz) == types.ClassType, 'must be a class...'
+        module = namedModule(clazz.__module__)
+        currclass = getattr(module, clazz.__name__, None)
+        if currclass is None:
+            return clazz
+        return currclass
+
+    # class graph nonsense
+
+    # I should really have a better name for this...
+    def isinst(inst,clazz):
+        if type(inst) != compat.InstanceType or type(clazz)!= types.ClassType:
+            return isinstance(inst,clazz)
+        cl = inst.__class__
+        cl2 = getcurrent(cl)
+        clazz = getcurrent(clazz)
+        if issubclass(cl2,clazz):
+            if cl == cl2:
+                return WAS
+            else:
+                inst.__class__ = cl2
+                return IS
+        else:
+            return ISNT
+
     # These functions are still imported by libraries used in turn by the
     # Twisted unit tests, like Nevow 0.10. Since they are deprecated,
     # there's no need to port them to Python 3 (hence the condition above).
