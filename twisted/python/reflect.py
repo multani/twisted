@@ -117,8 +117,8 @@ if not _PY3:
             return clazz
         return currclass
 
-    # class graph nonsense
 
+    # Class graph nonsense
     # I should really have a better name for this...
     def isinst(inst,clazz):
         if type(inst) != compat.InstanceType or type(clazz)!= types.ClassType:
