@@ -1,6 +1,8 @@
 # Copyright (c) Twisted Matrix Laboratories.
 # See LICENSE for details.
 
+from __future__ import division, absolute_import
+
 import datetime
 import errno
 import os
