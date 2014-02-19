@@ -161,6 +161,19 @@ class LogFileTestCase(unittest.TestCase):
         log.close()
 
 
+    def test_LogReaderReadsZeroLine(self):
+        """
+        L{LogReader.readLines} supports reading no line.
+        """
+        # We don't need any content, just a file path that can be opened.
+        with open(self.path, "w"):
+            pass
+
+        reader = logfile.LogReader(self.path)
+        self.assertEqual([], reader.readLines(0))
+        reader.close()
+
+
     def test_modePreservation(self):
         """
         Check rotated files have same permissions as original.
@@ -371,6 +384,20 @@ class LogFileTestCase(unittest.TestCase):
         self.assertEqual([1], log.listLogs())
         log.close()
 
+
+    def test_listLogsIgnoresZeroSuffixedFiles(self):
+        """
+        L{LogFile.listLogs} ignores log files which rotated suffix is 0.
+        """
+
+        log = logfile.LogFile(self.name, self.dir)
+
+        for i in range(0, 3):
+            with open("{0}.{1}".format(log.path, i), "w") as fp:
+                fp.write("123")
+
+        self.assertEqual([1, 2], log.listLogs())
+        log.close()
 
 
 class RiggedDailyLogFile(logfile.DailyLogFile):
