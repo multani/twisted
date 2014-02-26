@@ -480,6 +480,7 @@ class DailyLogFileTestCase(unittest.TestCase):
         log = RiggedDailyLogFile(self.name, self.dir)
         for d in data:
             log.write(d)
+        log.flush()
 
         # This returns the current log file.
         r = log.getLog(0.0)
@@ -489,8 +490,8 @@ class DailyLogFileTestCase(unittest.TestCase):
         self.assertRaises(ValueError, log.getLog, 86400)
 
         log._clock = 86401 # New day
-        log.rotate()
         r.close()
+        log.rotate()
         r = log.getLog(0) # We get the previous log
         self.assertEqual(data, r.readLines())
         log.close()
