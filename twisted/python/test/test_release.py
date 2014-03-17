@@ -1681,15 +1681,11 @@ class BuildAllTarballsTest(DistributionBuilderTestBase):
         no Git metadata.  This involves building documentation, which it will
         build with the correct API documentation reference base URL.
         """
-        repositoryPath = self.mktemp()
-        repository = FilePath(repositoryPath)
         checkoutPath = self.mktemp()
         checkout = FilePath(checkoutPath)
         self.outputDir.remove()
 
-        runCommand(["git", "init", repositoryPath])
-        runCommand(["git", "clone", "file://" + repository.path,
-                    checkout.path])
+        runCommand(["git", "init", checkout.path])
 
         structure = {
             "README": "Twisted",
@@ -1789,14 +1785,10 @@ class BuildAllTarballsTest(DistributionBuilderTestBase):
         L{UncleanWorkingDirectory} is raised by L{buildAllTarballs} when the
         Git repository provided has uncommitted changes.
         """
-        repositoryPath = self.mktemp()
-        repository = FilePath(repositoryPath)
         checkoutPath = self.mktemp()
         checkout = FilePath(checkoutPath)
 
-        runCommand(["git", "init", repositoryPath])
-        runCommand(["git", "clone", "file://" + repository.path,
-                    checkout.path])
+        runCommand(["git", "init", checkout.path])
 
         checkout.child("foo").setContent("whatever")
         self.assertRaises(UncleanWorkingDirectory,
