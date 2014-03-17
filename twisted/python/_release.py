@@ -525,7 +525,7 @@ class NewsBuilder(object):
         @param header: The top-level header to use when writing the news.
         @type header: L{str}
 
-        @raise NotWorkingDirectory: If the C{path} is not an SVN checkout.
+        @raise NotWorkingDirectory: If the C{path} is not an Git repository.
         """
         changes = []
         for part in (self._FEATURE, self._BUGFIX, self._DOC, self._REMOVAL):
@@ -557,8 +557,8 @@ class NewsBuilder(object):
     def _deleteFragments(self, path):
         """
         Delete the change information, to clean up the repository  once the
-        NEWS files have been built. It requires C{path} to be in a SVN
-        directory.
+        NEWS files have been built. It requires C{path} to be in a Git
+        repository.
 
         @param path: A directory (probably a I{topfiles} directory) containing
             change information in the form of <ticket>.<change type> files.
@@ -568,7 +568,7 @@ class NewsBuilder(object):
         for child in path.children():
             base, ext = os.path.splitext(child.basename())
             if ext in ticketTypes:
-                runCommand(["svn", "rm", child.path])
+                runCommand(["git", "-C", child.dirname(), "rm", child.path])
 
 
     def _getNewsName(self, project):
@@ -626,11 +626,9 @@ class NewsBuilder(object):
             beneath which to find Twisted projects for which to generate
             news (see L{findTwistedProjects}).
         """
-        try:
-            runCommand(["svn", "info", baseDirectory.path])
-        except CommandFailed:
+        if not baseDirectory.child(".git").exists():
             raise NotWorkingDirectory(
-                "%s does not appear to be an SVN working directory."
+                "%s does not appear to be an Git working directory."
                 % (baseDirectory.path,))
 
         today = self._today()
@@ -988,14 +986,14 @@ class DistributionBuilder(object):
 
 class UncleanWorkingDirectory(Exception):
     """
-    Raised when the working directory of an SVN checkout is unclean.
+    Raised when the working directory of a Git repository is unclean.
     """
 
 
 
 class NotWorkingDirectory(Exception):
     """
-    Raised when a directory does not appear to be an SVN working directory.
+    Raised when a directory does not appear to be a Git repository directory.
     """
 
 
@@ -1009,7 +1007,7 @@ def buildAllTarballs(checkout, destination, templatePath=None):
     NEWS files created.
 
     @type checkout: L{FilePath}
-    @param checkout: The SVN working copy from which a pristine source tree
+    @param checkout: The Git repository from which a pristine source tree
         will be exported.
     @type destination: L{FilePath}
     @param destination: The directory in which tarballs will be placed.
@@ -1019,20 +1017,22 @@ def buildAllTarballs(checkout, destination, templatePath=None):
 
     @raise UncleanWorkingDirectory: If there are modifications to the
         working directory of C{checkout}.
-    @raise NotWorkingDirectory: If the C{checkout} path is not an SVN checkout.
+    @raise NotWorkingDirectory: If the C{checkout} path is not a Git
+        repository.
     """
-    if not checkout.child(".svn").exists():
+    if not checkout.child(".git").exists():
         raise NotWorkingDirectory(
-            "%s does not appear to be an SVN working directory."
+            "%s does not appear to be an Git working directory."
             % (checkout.path,))
-    if runCommand(["svn", "st", checkout.path]).strip():
+    if runCommand(["git", "-C", checkout.path, "status", "--short"]).strip():
         raise UncleanWorkingDirectory(
-            "There are local modifications to the SVN checkout in %s."
+            "There are local modifications to the Git repository in %s."
             % (checkout.path,))
 
     workPath = FilePath(mkdtemp())
     export = workPath.child("export")
-    runCommand(["svn", "export", checkout.path, export.path])
+    runCommand(["git", "-C", checkout.path, "checkout-index", "--all",
+                "--force", "--prefix", export.path + "/"])
     twistedPath = export.child("twisted")
     version = Project(twistedPath).getVersion()
     versionString = version.base()

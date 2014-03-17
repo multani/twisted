@@ -62,10 +62,10 @@ else:
 
 
 
-if which("svn") and which("svnadmin"):
-    svnSkip = skip
+if which("git"):
+    gitSkip = skip
 else:
-    svnSkip = "svn or svnadmin is not present."
+    gitSkip = "git is not present."
 
 
 
@@ -763,7 +763,7 @@ class NewsBuilderTests(TestCase, StructureAssertingMixin):
     """
     Tests for L{NewsBuilder}.
     """
-    skip = svnSkip
+    skip = gitSkip
 
     def setUp(self):
         """
@@ -796,22 +796,17 @@ class NewsBuilderTests(TestCase, StructureAssertingMixin):
                 '41.doc': 'writing Foo servers'})
 
 
-    def svnCommit(self, project=None):
+    def gitCommit(self, project=None):
         """
-        Make the C{project} directory a valid subversion directory with all
+        Make the C{project} directory a valid Git repository with all
         files committed.
         """
         if project is None:
             project = self.project
-        repositoryPath = self.mktemp()
-        repository = FilePath(repositoryPath)
 
-        runCommand(["svnadmin", "create", repository.path])
-        runCommand(["svn", "checkout", "file://" + repository.path,
-                    project.path])
-
-        runCommand(["svn", "add"] + glob.glob(project.path + "/*"))
-        runCommand(["svn", "commit", project.path, "-m", "yay"])
+        runCommand(["git", "init", project.path])
+        runCommand(["git", "-C", project.path, "add"] + glob.glob(project.path + "/*"))
+        runCommand(["git", "-C", project.path, "commit", "-m", "yay"])
 
 
     def test_today(self):
@@ -1188,7 +1183,7 @@ class NewsBuilderTests(TestCase, StructureAssertingMixin):
         builder._today = lambda: '2009-12-01'
 
         project = self.createFakeTwistedProject()
-        self.svnCommit(project)
+        self.gitCommit(project)
         builder.buildAll(project)
 
         coreTopfiles = project.child("topfiles")
@@ -1216,7 +1211,7 @@ class NewsBuilderTests(TestCase, StructureAssertingMixin):
         """
         builder = NewsBuilder()
         project = self.createFakeTwistedProject()
-        self.svnCommit(project)
+        self.gitCommit(project)
         builder.buildAll(project)
 
         aggregateNews = project.child("NEWS")
@@ -1235,7 +1230,7 @@ class NewsBuilderTests(TestCase, StructureAssertingMixin):
         builder = NewsBuilder()
         builder._today = lambda: '2009-12-01'
         project = self.createFakeTwistedProject()
-        self.svnCommit(project)
+        self.gitCommit(project)
         builder.buildAll(project)
         newVersion = Version('TEMPLATE', 7, 7, 14)
         coreNews = project.child('topfiles').child('NEWS')
@@ -1261,24 +1256,24 @@ class NewsBuilderTests(TestCase, StructureAssertingMixin):
     def test_removeNEWSfragments(self):
         """
         L{NewsBuilder.buildALL} removes all the NEWS fragments after the build
-        process, using the C{svn} C{rm} command.
+        process, using the C{git} C{rm} command.
         """
         builder = NewsBuilder()
         project = self.createFakeTwistedProject()
-        self.svnCommit(project)
+        self.gitCommit(project)
         builder.buildAll(project)
 
         self.assertEqual(5, len(project.children()))
-        output = runCommand(["svn", "status", project.path])
+        output = runCommand(["git", "-C", project.path, "status", "--short"])
         removed = [line for line in output.splitlines()
                    if line.startswith("D ")]
         self.assertEqual(3, len(removed))
 
 
-    def test_checkSVN(self):
+    def test_checkGit(self):
         """
         L{NewsBuilder.buildAll} raises L{NotWorkingDirectory} when the given
-        path is not a SVN checkout.
+        path is not a Git repository.
         """
         self.assertRaises(
             NotWorkingDirectory, self.builder.buildAll, self.project)
@@ -1677,13 +1672,13 @@ class BuildAllTarballsTest(DistributionBuilderTestBase):
     """
     Tests for L{DistributionBuilder.buildAllTarballs}.
     """
-    skip = svnSkip or sphinxSkip
+    skip = gitSkip or sphinxSkip
 
     def test_buildAllTarballs(self):
         """
         L{buildAllTarballs} builds tarballs for Twisted and all of its
-        subprojects based on an SVN checkout; the resulting tarballs contain
-        no SVN metadata.  This involves building documentation, which it will
+        subprojects based on an Git repository; the resulting tarballs contain
+        no Git metadata.  This involves building documentation, which it will
         build with the correct API documentation reference base URL.
         """
         repositoryPath = self.mktemp()
@@ -1692,8 +1687,8 @@ class BuildAllTarballsTest(DistributionBuilderTestBase):
         checkout = FilePath(checkoutPath)
         self.outputDir.remove()
 
-        runCommand(["svnadmin", "create", repositoryPath])
-        runCommand(["svn", "checkout", "file://" + repository.path,
+        runCommand(["git", "init", repositoryPath])
+        runCommand(["git", "clone", "file://" + repository.path,
                     checkout.path])
 
         structure = {
@@ -1768,8 +1763,8 @@ class BuildAllTarballsTest(DistributionBuilderTestBase):
 
         self.createStructure(checkout, structure)
         childs = [x.path for x in checkout.children()]
-        runCommand(["svn", "add"] + childs)
-        runCommand(["svn", "commit", checkout.path, "-m", "yay"])
+        runCommand(["git", "-C", checkout.path, "add", "-f"] + childs)
+        runCommand(["git", "-C", checkout.path, "commit", "-m", "yay"])
 
         buildAllTarballs(checkout, self.outputDir)
         self.assertEqual(
@@ -1792,15 +1787,15 @@ class BuildAllTarballsTest(DistributionBuilderTestBase):
     def test_buildAllTarballsEnsuresCleanCheckout(self):
         """
         L{UncleanWorkingDirectory} is raised by L{buildAllTarballs} when the
-        SVN checkout provided has uncommitted changes.
+        Git repository provided has uncommitted changes.
         """
         repositoryPath = self.mktemp()
         repository = FilePath(repositoryPath)
         checkoutPath = self.mktemp()
         checkout = FilePath(checkoutPath)
 
-        runCommand(["svnadmin", "create", repositoryPath])
-        runCommand(["svn", "checkout", "file://" + repository.path,
+        runCommand(["git", "init", repositoryPath])
+        runCommand(["git", "clone", "file://" + repository.path,
                     checkout.path])
 
         checkout.child("foo").setContent("whatever")
@@ -1811,7 +1806,7 @@ class BuildAllTarballsTest(DistributionBuilderTestBase):
     def test_buildAllTarballsEnsuresExistingCheckout(self):
         """
         L{NotWorkingDirectory} is raised by L{buildAllTarballs} when the
-        checkout passed does not exist or is not an SVN checkout.
+        checkout passed does not exist or is not a Git repository.
         """
         checkout = FilePath(self.mktemp())
         self.assertRaises(NotWorkingDirectory,
