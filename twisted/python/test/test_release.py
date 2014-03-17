@@ -1677,7 +1677,7 @@ class BuildAllTarballsTest(DistributionBuilderTestBase):
     def test_buildAllTarballs(self):
         """
         L{buildAllTarballs} builds tarballs for Twisted and all of its
-        subprojects based on an Git repository; the resulting tarballs contain
+        subprojects based on a Git repository; the resulting tarballs contain
         no Git metadata.  This involves building documentation, which it will
         build with the correct API documentation reference base URL.
         """

@@ -628,7 +628,7 @@ class NewsBuilder(object):
         """
         if not baseDirectory.child(".git").exists():
             raise NotWorkingDirectory(
-                "%s does not appear to be an Git working directory."
+                "%s does not appear to be an Git repository."
                 % (baseDirectory.path,))
 
         today = self._today()
