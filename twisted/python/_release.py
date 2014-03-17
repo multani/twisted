@@ -1031,8 +1031,11 @@ def buildAllTarballs(checkout, destination, templatePath=None):
 
     workPath = FilePath(mkdtemp())
     export = workPath.child("export")
-    runCommand(["git", "-C", checkout.path, "checkout-index", "--all",
-                "--force", "--prefix", export.path + "/"])
+    runCommand(["git", "-C", checkout.path,
+                "checkout-index", "--all", "--force",
+                # prefix has to end up with a "/" so that files get copied to a
+                # directory whose name is the prefix.
+                "--prefix", export.path + "/"])
     twistedPath = export.child("twisted")
     version = Project(twistedPath).getVersion()
     versionString = version.base()
