@@ -20,9 +20,10 @@ import os
 import sys
 import getopt
 from os import path
+import textwrap
 
 # Sibling Imports
-from twisted.python import reflect, text, util
+from twisted.python import reflect, util
 
 
 class UsageError(Exception):
@@ -536,7 +537,7 @@ class Options(dict):
 
         if longdesc:
             longdesc = ('\n' +
-                        '\n'.join(text.wordWrap(longdesc, width)).strip()
+                        '\n'.join(textwrap.wrap(longdesc, width)).strip()
                         + '\n')
 
         if optDicts:
@@ -936,7 +937,7 @@ def docMakeChunks(optList, width=80):
                 doc = "%s. %s" % (doc, d.doc)
 
         if doc:
-            column2_l = text.wordWrap(doc, colWidth2)
+            column2_l = textwrap.wrap(doc, colWidth2)
         else:
             column2_l = ['']
 
