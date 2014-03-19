@@ -637,21 +637,24 @@ class FlagFunctionTest(unittest.TestCase):
 
     def test_hasArg(self):
         """
-        Check a method which accepts an argument.
+        L{usage.flagFunction} returns a truth value is the method checked allows
+        exactly one argument.
         """
         self.assertEqual(0, usage.flagFunction(self.obj.oneArg))
 
 
     def test_noArg(self):
         """
-        Check a method which doesn't take argument.
+        L{usage.flagFunction} returns a false value is the method checked allows
+        exactly no argument.
         """
         self.assertEqual(1, usage.flagFunction(self.obj.noArg))
 
 
     def test_tooManyArguments(self):
         """
-        Check a method which takes too many arguments.
+        L{usage.flagFunction} raises L{usage.UsageError} if the method checked
+        allows more than one argument.
         """
         try:
             usage.flagFunction(self.obj.manyArgs)
@@ -663,8 +666,8 @@ class FlagFunctionTest(unittest.TestCase):
 
     def test_tooManyArgumentsAndSpecificErrorMessage(self):
         """
-        Check a method which takes too many arguments, with a specific error
-        message.
+        L{usage.flagFunction} allows to specify the name of the method in its
+        error message if the method allows too many arguments.
         """
         try:
             usage.flagFunction(self.obj.manyArgs, "flubuduf")
@@ -701,7 +704,6 @@ class OptionsInternalTest(unittest.TestCase):
 
         (_, _, _, _, synonyms, _) = Opts()._gather_handlers()
 
-        # Aliases points towards the longest method name
         self.assertEqual("very-very-long", synonyms['s'])
         self.assertEqual("very-very-long", synonyms['short'])
         self.assertEqual("very-very-long", synonyms['very-very-long'])
