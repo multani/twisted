@@ -5,6 +5,10 @@
 Tests for L{twisted.python.usage}, a command line option parsing library.
 """
 
+from __future__ import division, absolute_import
+
+import sys
+
 from twisted.trial import unittest
 from twisted.python import usage
 
@@ -393,7 +397,7 @@ class HelpStringTest(unittest.TestCase):
         """
         try:
             self.nice.__str__()
-        except Exception, e:
+        except Exception as e:
             self.fail(e)
 
     def test_whitespaceStripFlagsAndParameters(self):
@@ -610,3 +614,94 @@ class CompleterNotImplementedTestCase(unittest.TestCase):
                 action = cls(None)
             self.assertRaises(NotImplementedError, action._shellCode,
                               None, "bad_shell_type")
+
+
+class FlagFunctionTest(unittest.TestCase):
+    """
+    Tests for L{usage.flagFunction}.
+    """
+
+    class SomeClass:
+        def oneArg(self, a):
+            pass
+
+        def noArg(self):
+            pass
+
+        def manyArgs(self, a, b, c):
+            pass
+
+
+    obj = SomeClass()
+
+
+    def test_hasArg(self):
+        """
+        Check a method which accepts an argument.
+        """
+        self.assertEqual(0, usage.flagFunction(self.obj.oneArg))
+
+
+    def test_noArg(self):
+        """
+        Check a method which doesn't take argument.
+        """
+        self.assertEqual(1, usage.flagFunction(self.obj.noArg))
+
+
+    def test_tooManyArguments(self):
+        """
+        Check a method which takes too many arguments.
+        """
+        try:
+            usage.flagFunction(self.obj.manyArgs)
+        except usage.UsageError as e:
+            self.assertEqual("Invalid Option function for manyArgs", str(e))
+        except:
+            self.fail("Didn't raise UsageError")
+
+
+    def test_tooManyArgumentsAndSpecificErrorMessage(self):
+        """
+        Check a method which takes too many arguments, with a specific error
+        message.
+        """
+        try:
+            usage.flagFunction(self.obj.manyArgs, "flubuduf")
+        except usage.UsageError as e:
+            self.assertEqual("Invalid Option function for flubuduf", str(e))
+        except:
+            self.fail("Didn't raise UsageError")
+
+
+class OptionsInternalTest(unittest.TestCase):
+    """
+    Tests internal behavior of C{usage.Options}.
+    """
+
+    def test_hashValue(self):
+        """
+        The hash of a L{usage.Options} object is limited by the size of the
+        maximum integer of the platform.
+        """
+        option = usage.Options()
+        self.assertLess(hash(option), sys.maxsize)
+
+
+    def test_optionsAliasesOrder(self):
+        """
+        Synonym options are aliases toward the longest option name.
+        """
+        class Opts(usage.Options):
+            def opt_very_very_long(self):
+                pass
+
+            opt_short = opt_very_very_long
+            opt_s = opt_very_very_long
+
+        (_, _, _, _, synonyms, _) = Opts()._gather_handlers()
+
+        # Aliases points towards the longest method name
+        self.assertEqual("very-very-long", synonyms['s'])
+        self.assertEqual("very-very-long", synonyms['short'])
+        self.assertEqual("very-very-long", synonyms['very-very-long'])
