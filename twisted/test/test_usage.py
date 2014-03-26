@@ -637,7 +637,7 @@ class FlagFunctionTest(unittest.TestCase):
 
     def test_hasArg(self):
         """
-        L{usage.flagFunction} returns a truth value is the method checked allows
+        L{usage.flagFunction} returns a truth value if the method checked allows
         exactly one argument.
         """
         self.assertEqual(0, usage.flagFunction(self.obj.oneArg))
@@ -645,7 +645,7 @@ class FlagFunctionTest(unittest.TestCase):
 
     def test_noArg(self):
         """
-        L{usage.flagFunction} returns a false value is the method checked allows
+        L{usage.flagFunction} returns a false value if the method checked allows
         exactly no argument.
         """
         self.assertEqual(1, usage.flagFunction(self.obj.noArg))
