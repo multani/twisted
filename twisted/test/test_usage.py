@@ -693,7 +693,8 @@ class OptionsInternalTest(unittest.TestCase):
 
     def test_optionsAliasesOrder(self):
         """
-        Synonym options are aliases toward the longest option name.
+        Options which are synonyms to another option are aliases towards the
+        longest option name.
         """
         class Opts(usage.Options):
             def opt_very_very_long(self):
@@ -702,8 +703,8 @@ class OptionsInternalTest(unittest.TestCase):
             opt_short = opt_very_very_long
             opt_s = opt_very_very_long
 
-        (_, _, _, _, synonyms, _) = Opts()._gather_handlers()
+        opts = Opts()
 
-        self.assertEqual("very-very-long", synonyms['s'])
-        self.assertEqual("very-very-long", synonyms['short'])
-        self.assertEqual("very-very-long", synonyms['very-very-long'])
+        self.assertEqual("very-very-long", opts.synonyms['s'])
+        self.assertEqual("very-very-long", opts.synonyms['short'])
+        self.assertEqual("very-very-long", opts.synonyms['very-very-long'])
