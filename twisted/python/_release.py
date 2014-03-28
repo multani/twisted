@@ -688,11 +688,12 @@ class NewsBuilder(object):
             change information in the form of <ticket>.<change type> files.
         @type path: L{FilePath}
         """
+        cmd = getRepositoryCommand(path)
         ticketTypes = self._headings.keys()
         for child in path.children():
             base, ext = os.path.splitext(child.basename())
             if ext in ticketTypes:
-                runCommand(["git", "-C", child.dirname(), "rm", child.path])
+                cmd.remove(child)
 
 
     def _getNewsName(self, project):
@@ -750,10 +751,8 @@ class NewsBuilder(object):
             beneath which to find Twisted projects for which to generate
             news (see L{findTwistedProjects}).
         """
-        if not baseDirectory.child(".git").exists():
-            raise NotWorkingDirectory(
-                "%s does not appear to be an Git repository."
-                % (baseDirectory.path,))
+        cmd = getRepositoryCommand(baseDirectory)
+        cmd.ensureIsWorkingDirectory(baseDirectory)
 
         today = self._today()
         for topfiles, name, version in self._iterProjects(baseDirectory):
@@ -1144,22 +1143,17 @@ def buildAllTarballs(checkout, destination, templatePath=None):
     @raise NotWorkingDirectory: If the C{checkout} path is not a Git
         repository.
     """
-    if not checkout.child(".git").exists():
-        raise NotWorkingDirectory(
-            "%s does not appear to be an Git working directory."
-            % (checkout.path,))
-    if runCommand(["git", "-C", checkout.path, "status", "--short"]).strip():
+    cmd = getRepositoryCommand(checkout)
+    cmd.ensureIsWorkingDirectory(checkout)
+
+    if not cmd.isStatusClean(checkout):
         raise UncleanWorkingDirectory(
-            "There are local modifications to the Git repository in %s."
+            "There are local modifications to the repository in %s."
             % (checkout.path,))
 
     workPath = FilePath(mkdtemp())
     export = workPath.child("export")
-    runCommand(["git", "-C", checkout.path,
-                "checkout-index", "--all", "--force",
-                # prefix has to end up with a "/" so that files get copied to a
-                # directory whose name is the prefix.
-                "--prefix", export.path + "/"])
+    cmd.exportTo(checkout, export)
     twistedPath = export.child("twisted")
     version = Project(twistedPath).getVersion()
     versionString = version.base()
