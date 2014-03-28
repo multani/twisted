@@ -33,7 +33,8 @@ from twisted.python._release import (
     changeAllProjectVersions, VERSION_OFFSET, filePathDelta, CommandFailed,
     DistributionBuilder, APIBuilder, BuildAPIDocsScript, buildAllTarballs,
     runCommand, UncleanWorkingDirectory, NotWorkingDirectory,
-    ChangeVersionsScript, BuildTarballsScript, NewsBuilder, SphinxBuilder)
+    ChangeVersionsScript, BuildTarballsScript, NewsBuilder, SphinxBuilder,
+    GitCommand, SVNCommand)
 
 if os.name != 'posix':
     skip = "Release toolchain only supported on POSIX."
@@ -1967,3 +1968,171 @@ class ScriptTests(StructureAssertingMixin, TestCase):
         newsBuilder.buildAll = builds.append
         newsBuilder.main(["/foo/bar/baz"])
         self.assertEqual(builds, [FilePath("/foo/bar/baz")])
+
+
+class CommandsTestMixin(StructureAssertingMixin):
+    """
+    Test mixin for the VCS commands used by the release scripts.
+    """
+    def setUp(self):
+        self.tmpDir = FilePath(self.mktemp())
+        self.tmpDir.createDirectory()
+
+
+    def test_ensureIsWorkingDirectoryWithWorkingDirectory(self):
+        """
+        Calling the `ensureIsWorkingDirectory` VCS command's method on a valid
+        working directory doesn't produce any error.
+        """
+        reposDir = self.makeRepository(self.tmpDir)
+        cmd = self.createCommand()
+        self.assertEqual(None, cmd.ensureIsWorkingDirectory(reposDir))
+
+
+    def test_ensureIsWorkingDirectoryWithNonWorkingDirectory(self):
+        """
+        Calling the `ensureIsWorkingDirectory` VCS command's method on a invalid
+        working directory raises a L{NotWorkingDirectory} exception.
+        """
+        cmd = self.createCommand()
+        self.assertRaises(NotWorkingDirectory,
+                          cmd.ensureIsWorkingDirectory, self.tmpDir)
+
+
+    def test_statusClean(self):
+        """
+        Calling the `isStatusClean` VCS command's method on a repository with no
+        pending modifications returns `True`.
+        """
+        reposDir = self.makeRepository(self.tmpDir)
+        cmd = self.createCommand()
+        self.assertTrue(cmd.isStatusClean(reposDir))
+
+
+    def test_statusNotClean(self):
+        """
+        Calling the `isStatusClean` VCS command's method on a repository with no
+        pending modifications returns `False`.
+        """
+        reposDir = self.makeRepository(self.tmpDir)
+        reposDir.child('some-file').setContent("something")
+        cmd = self.createCommand()
+        self.assertFalse(cmd.isStatusClean(reposDir))
+
+
+    def test_remove(self):
+        """
+        Calling the `remove` VCS command's method remove the specified path from
+        the directory.
+        """
+        reposDir = self.makeRepository(self.tmpDir)
+        testFile = reposDir.child('some-file')
+        testFile.setContent("something")
+        self.commitRepository(reposDir)
+        self.assertTrue(testFile.exists())
+
+        cmd = self.createCommand()
+        cmd.remove(testFile)
+        testFile.restat(False) # Refresh the file information
+        self.assertFalse(testFile.exists(), "File still exists")
+
+
+    def test_export(self):
+        """
+        The `exportTo` VCS command's method export the content of the repository
+        as identical in a specified directory.
+        """
+        structure = {
+            "README": "Hi this is 1.0.0.",
+            "twisted": {
+                "topfiles": {
+                    "README": "Hi this is 1.0.0"},
+                "_version.py": genVersion("twisted", 1, 0, 0),
+                "web": {
+                    "topfiles": {
+                        "README": "Hi this is 1.0.0"},
+                    "_version.py": genVersion("twisted.web", 1, 0, 0)}}}
+        reposDir = self.makeRepository(self.tmpDir)
+        self.createStructure(reposDir, structure)
+        self.commitRepository(reposDir)
+
+        exportDir = FilePath(self.mktemp())
+        cmd = self.createCommand()
+        cmd.exportTo(reposDir, exportDir)
+        self.assertStructure(exportDir, structure)
+
+
+class GitCommandTest(CommandsTestMixin, TestCase):
+    """
+    Specific L{CommandsTestMixin} related to Git repositories through
+    L{GitCommand}.
+    """
+    createCommand = staticmethod(GitCommand)
+
+
+    def makeRepository(self, root):
+        """
+        Create a Git repository in the specified path.
+
+        @type root: L{FilePath}
+        @params root: The directory to create the Git repository into.
+
+        @return: The path to the repository just created.
+        @rtype: L{FilePath}
+        """
+        runCommand(["git", "init", root.path])
+        return root
+
+
+    def commitRepository(self, repository):
+        """
+        Add and commit all the files from the Git repository specified.
+
+        @type repository: L{FilePath}
+        @params repository: The Git repository to commit into.
+        """
+        runCommand(["git", "-C", repository.path, "add"] +
+                   glob.glob(repository.path + "/*"))
+        runCommand(["git", "-C", repository.path, "commit", "-m", "hop"])
+
+
+class SVNCommandTest(CommandsTestMixin, TestCase):
+    """
+    Specific L{CommandsTestMixin} related to Subversion checkouts through
+    L{SVNCommand}.
+    """
+    createCommand = staticmethod(SVNCommand)
+
+
+    def makeRepository(self, root):
+        """
+        Create a Subversion repository and a checkout at the specified path.
+        Note that due to how Subversion functions, it creates 2 directories and
+        the caller has to use the path returned by this function to access the
+        Subversion checkout.
+
+        @type root: L{FilePath}
+        @params root: The directory to create the Subversion repository and
+            checkout into.
+
+        @return: The path to the Subversion checkout.
+        @rtype: L{FilePath}
+        """
+        repository = root.child('repository')
+        checkout = root.child('checkout')
+
+        runCommand(["svnadmin", "create", repository.path])
+        runCommand(["svn", "checkout", "file://" + repository.path,
+                    checkout.path])
+        return checkout
+
+
+    def commitRepository(self, repository):
+        """
+        Add and commit all the files from the specified Subversion checkout.
+
+        @type repository: L{FilePath}
+        @params repository: The Subversion checkout to commit into.
+        """
+        runCommand(["svn", "add"] + glob.glob(repository.path + "/*"))
+        runCommand(["svn", "commit", repository.path, "-m", "hop"])

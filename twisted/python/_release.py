@@ -76,6 +76,105 @@ class CommandFailed(Exception):
         self.output = output
 
 
+class GitCommand(object):
+    """
+    Subset of Git commands to release Twisted from a Git repository.
+    """
+    def ensureIsWorkingDirectory(self, directory):
+        if not directory.child(".git").exists():
+            raise NotWorkingDirectory(
+                "%s does not appear to be a Git repository."
+                % (directory.path,))
+
+
+    def isStatusClean(self, path):
+        """
+        Return the Git status of the files in the specified path.
+
+        @type path: L{twisted.python.filepath.FilePath}
+        @params path: The path to get the status from (can be a directory or a
+            file.)
+        """
+        status = runCommand(["git", "-C", path.path, "status", "--short"]).strip()
+        return status == ''
+
+
+    def remove(self, path):
+        """
+        Remove the specified path from a Git repository.
+
+        @type path: L{twisted.python.filepath.FilePath}
+        @params path: The path to remove from the repository.
+        """
+        runCommand(["git", "-C", path.dirname(), "rm", path.path])
+
+
+    def exportTo(self, fromDir, exportDir):
+        """
+        Export the content of a Git repository to the specified directory.
+
+        @type fromDir: L{twisted.python.filepath.FilePath}
+        @params fromDir: The path to the Git repository to export.
+
+        @type exportDir: L{twisted.python.filepath.FilePath}
+        @params exportDir: The directory to export the content of the repository
+            to. This directory doesn't have to exist prior to exporting the
+            repository.
+        """
+        runCommand(["git", "-C", fromDir.path,
+                    "checkout-index", "--all", "--force",
+                    # prefix has to end up with a "/" so that files get copied to a
+                    # directory whose name is the prefix.
+                    "--prefix", exportDir.path + "/"])
+
+
+class SVNCommand(object):
+    """
+    Subset of SVN commands to release Twisted from a Subversion checkout.
+    """
+    def ensureIsWorkingDirectory(self, directory):
+        if not directory.child(".svn").exists():
+            raise NotWorkingDirectory(
+                "%s does not appear to be an SVN working directory."
+                % (directory.path,))
+
+
+    def isStatusClean(self, path):
+        """
+        Return the SVN status of the files in the specified path.
+
+        @type path: L{twisted.python.filepath.FilePath}
+        @params path: The path to get the status from (can be a directory or a
+            file.)
+        """
+        status = runCommand(["svn", "status", path.path]).strip()
+        return status == ''
+
+
+    def remove(self, path):
+        """
+        Remove the specified path from a Subversion checkout.
+
+        @type path: L{twisted.python.filepath.FilePath}
+        @params path: The path to remove from the checkout.
+        """
+        runCommand(["svn", "rm", path.path])
+
+
+    def exportTo(self, fromDir, exportDir):
+        """
+        Export the content of a SVN checkout to the specified directory.
+
+        @type fromDir: L{twisted.python.filepath.FilePath}
+        @params fromDir: The path to the Subversion checkout to export.
+
+        @type exportDir: L{twisted.python.filepath.FilePath}
+        @params exportDir: The directory to export the content of the checkout
+            to. This directory doesn't have to exist prior to exporting the
+            repository.
+        """
+        runCommand(["svn", "export", fromDir.path, exportDir.path])
+
 
 def _changeVersionInFile(old, new, filename):
     """
