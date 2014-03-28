@@ -34,7 +34,7 @@ from twisted.python._release import (
     DistributionBuilder, APIBuilder, BuildAPIDocsScript, buildAllTarballs,
     runCommand, UncleanWorkingDirectory, NotWorkingDirectory,
     ChangeVersionsScript, BuildTarballsScript, NewsBuilder, SphinxBuilder,
-    GitCommand, SVNCommand)
+    GitCommand, SVNCommand, getRepositoryCommand)
 
 if os.name != 'posix':
     skip = "Release toolchain only supported on POSIX."
@@ -2136,3 +2136,57 @@ class SVNCommandTest(CommandsTestMixin, TestCase):
         """
         runCommand(["svn", "add"] + glob.glob(repository.path + "/*"))
         runCommand(["svn", "commit", repository.path, "-m", "hop"])
+
+
+class RepositoryCommandDetectionTest(TestCase):
+    """
+    Test the L{getRepositoryCommand} to acces the right set of VCS commands
+    depending on the repository manipulated.
+    """
+    def setUp(self):
+        self.repos = FilePath(self.mktemp())
+        self.repos.createDirectory()
+
+
+    def test_subversion(self):
+        """
+        L{getRepositoryCommand} from a Subversion checkout returns a
+        L{SVNCommand} instance.
+        """
+        self.repos.child('.svn').createDirectory()
+        cmd = getRepositoryCommand(self.repos)
+        self.assertTrue(isinstance(cmd, SVNCommand), cmd)
+
+
+    def test_git(self):
+        """
+        L{getRepositoryCommand} from a Git repository returns a L{GitCommand}
+        instance.
+        """
+        self.repos.child('.git').createDirectory()
+        cmd = getRepositoryCommand(self.repos)
+        self.assertTrue(isinstance(cmd, GitCommand), cmd)
+
+
+    def test_subversionPreferredOverGit(self):
+        """
+        L{getRepositoryCommand} from a directory which looks like both as a
+        Subversion checkout or a Git directory returns a L{SVNCommand}, which is
+        the currently preferred way of dealing with Twisted release scripts.
+        """
+        self.repos.child('.git').createDirectory()
+        self.repos.child('.svn').createDirectory()
+
+        cmd = getRepositoryCommand(self.repos)
+        self.assertTrue(isinstance(cmd, SVNCommand), cmd)
+
+
+    def test_unknownRepository(self):
+        """
+        L{getRepositoryCommand} from a directory which doesn't look like a
+        Subversion checkout nor a Git repository produce a
+        L{NotWorkingDirectory} exceptions.
+        """
+        self.assertRaises(NotWorkingDirectory, getRepositoryCommand, self.repos)
+        self.assertRaises(NotWorkingDirectory, getRepositoryCommand,
+                          FilePath(self.mktemp()))

@@ -176,6 +176,31 @@ class SVNCommand(object):
         runCommand(["svn", "export", fromDir.path, exportDir.path])
 
 
+def getRepositoryCommand(directory):
+    """
+    Detect the VCS used in the specified directory and return either a
+    L{SVNCommand} or a L{GitCommand} if the directory is a Subversion checkout
+    or a Git repository, respectively.
+    If the directory is neither one nor the other, it raises a
+    L{NotWorkingDirectory} exception.
+
+    @type directory: L{FilePath}
+    @params directory: The directory to detect the VCS used from.
+
+    @rtype: L{SVNCommand} or L{GitCommand}
+
+    @raise NotWorkingDirectory: if no supported VCS can be found from the
+        specified directory.
+    """
+    if directory.child('.svn').exists():
+        return SVNCommand()
+    elif directory.child('.git').exists():
+        return GitCommand()
+    else:
+        raise NotWorkingDirectory("No supported VCS can be found in %s" %
+                                  (directory.path,))
+
+
 def _changeVersionInFile(old, new, filename):
     """
     Replace the C{old} version number with the C{new} one in the given
