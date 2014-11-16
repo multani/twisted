@@ -108,7 +108,7 @@ class Options(dict):
                   'Embark upon a holy quest']
         ]
 
-    In this case, C{"holyquest --horseback --for-grail"} will cause
+    In this case, C{"<program> holyquest --horseback --for-grail"} will cause
     C{HolyQuestOptions} to be instantiated and asked to parse
     C{['--horseback', '--for-grail']}.  Currently, only the first sub-command
     is parsed, and all options following it are passed to its parser.  If a
